@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, Trash2, Calendar, FileVideo, Edit2, Check, X, Copy, FileText, Linkedin, Instagram, Youtube } from 'lucide-react';
+import { ChevronDown, Trash2, Calendar, FileVideo, Edit2, Check, Copy, FileText, Linkedin, Instagram, Youtube } from 'lucide-react';
 import type { GenerationHistoryEntry, ContentFormat } from '../../types';
 
 const XIcon = (props: React.SVGProps<SVGSVGElement> | { className?: string }) => (
