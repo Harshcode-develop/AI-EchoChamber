@@ -200,8 +200,23 @@ export default function CreatePage() {
         fetchHistory();
       }
     } catch (err: any) {
-      const detail = err.response?.data?.detail || 'Generation failed';
-      toast.error(detail);
+      console.error('Generation Error details:', err);
+      let detail = 'Generation failed. Please try again.';
+      
+      if (err.response?.data?.detail) {
+        detail = typeof err.response.data.detail === 'string'
+          ? err.response.data.detail
+          : JSON.stringify(err.response.data.detail);
+      } else if (err.message) {
+        detail = err.message;
+      }
+      
+      // If it mentions 429 or quota natively
+      if (detail.includes('429') || detail.includes('Too Many Requests') || detail.toLowerCase().includes('quota')) {
+        detail = 'Google AI limits reached (15 requests per minute). Please wait 60 seconds and try again.';
+      }
+      
+      toast.error(detail, { duration: 6000, position: 'top-center' });
     } finally {
       setIsGenerating(false);
     }
