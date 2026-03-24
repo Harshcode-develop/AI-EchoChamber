@@ -149,7 +149,7 @@ class GenerationLimiter:
                     logger.info("Auth user %s hit generation limit", user_id)
                     raise HTTPException(
                         status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                        detail="Generation limit reached. Please contact the developer in contact for more generations",
+                        detail="You have reached your daily generation limit! Please come back tomorrow or upgrade your account.",
                     )
                 self.auth_generations[user_id][today] = count + 1
 
@@ -169,7 +169,7 @@ class GenerationLimiter:
                     logger.info("Guest %s hit generation limit", fingerprint[:8])
                     raise HTTPException(
                         status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                        detail="Generation limit reached. Please contact the developer in contact for more generations",
+                        detail="You have reached your daily generation limit! Please come back tomorrow or upgrade your account.",
                     )
                 self.guest_generations[fingerprint][today] = count + 1
 

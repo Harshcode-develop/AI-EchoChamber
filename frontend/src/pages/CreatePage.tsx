@@ -211,8 +211,11 @@ export default function CreatePage() {
         detail = err.message;
       }
       
-      // If it mentions 429 or quota natively
-      if (detail.includes('429') || detail.includes('Too Many Requests') || detail.toLowerCase().includes('quota')) {
+      // Separate our Daily API limits from Google's burst API limits
+      if (detail.includes('daily generation limit')) {
+        // App limit reached - no change needed, message is already perfect 
+      } else if (detail.includes('429') || detail.includes('Too Many Requests') || detail.toLowerCase().includes('quota')) {
+        // Google limit reached
         detail = 'Google AI limits reached (15 requests per minute). Please wait 60 seconds and try again.';
       }
       
