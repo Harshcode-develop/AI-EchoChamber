@@ -1,4 +1,4 @@
-import { useState, useEffect, lazy, Suspense } from 'react';
+import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { ThemeProvider } from './context/ThemeContext';
@@ -10,30 +10,11 @@ import AuthModal from './components/auth/AuthModal';
 import FlowingParticles from './components/layout/FlowingParticles';
 import { ContactProvider } from './context/ContactContext';
 import ContactModal from './components/contact/ContactModal';
-import { Zap } from 'lucide-react';
 
-// Lazy load pages for performance
-const HomePage = lazy(() => import('./pages/HomePage'));
-const CreatePage = lazy(() => import('./pages/CreatePage'));
-const HowItWorksPage = lazy(() => import('./pages/HowItWorksPage'));
-const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'));
-
-// Premium branded loading fallback
-function PageLoader() {
-  return (
-    <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-[var(--bg-primary)]/80 backdrop-blur-md">
-      <div className="relative">
-        <div className="w-16 h-16 rounded-2xl gradient-bg-pink flex items-center justify-center shadow-2xl animate-bounce">
-          <Zap className="w-8 h-8 text-white" />
-        </div>
-        <div className="absolute -inset-4 bg-[var(--accent-pink)]/20 rounded-full blur-2xl animate-pulse -z-10" />
-      </div>
-      <p className="mt-8 text-[12px] font-black uppercase tracking-[0.3em] text-[var(--accent-pink)] animate-pulse">
-        Echoing Magic...
-      </p>
-    </div>
-  );
-}
+import HomePage from './pages/HomePage';
+import CreatePage from './pages/CreatePage';
+import HowItWorksPage from './pages/HowItWorksPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 
 export default function App() {
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
@@ -66,40 +47,38 @@ export default function App() {
       <AuthProvider>
         <ContactProvider>
           <BrowserRouter>
-            {/* Background particles */}
-            <div className="bg-particles">
-              <FlowingParticles />
-            </div>
+            <div className="flex flex-col min-h-screen">
+              {/* Background particles */}
+              <div className="bg-particles">
+                <FlowingParticles />
+              </div>
 
-            {/* Navigation */}
-            <Navbar onSignupClick={openSignup} />
+              {/* Navigation */}
+              <Navbar onSignupClick={openSignup} />
 
-            {/* Routes and Main Content */}
-            <main className="relative z-10">
-              <Suspense fallback={<PageLoader />}>
+              {/* Routes and Main Content */}
+              <main className="relative z-10 flex-1 flex flex-col">
                 <Routes>
                   <Route path="/" element={<HomePage />} />
                   <Route path="/how-it-works" element={<HowItWorksPage />} />
                   <Route path="/reset-password" element={<ResetPasswordPage />} />
                   <Route path="/create" element={<CreatePage />} />
                 </Routes>
-              </Suspense>
-            </main>
+              </main>
 
-            {/* Footer */}
-            <Suspense fallback={null}>
+              {/* Footer */}
               <Footer />
-            </Suspense>
 
-            {/* Global Modals & Widgets */}
-            <AuthModal
-              mode={authMode}
-              isOpen={authOpen}
-              onClose={() => setAuthOpen(false)}
-              onSwitch={switchAuth}
-            />
-            <ContactModal />
-            <ChatWidget />
+              {/* Global Modals & Widgets */}
+              <AuthModal
+                mode={authMode}
+                isOpen={authOpen}
+                onClose={() => setAuthOpen(false)}
+                onSwitch={switchAuth}
+              />
+              <ContactModal />
+              <ChatWidget />
+            </div>
 
             {/* Toast Notifications */}
             <Toaster
