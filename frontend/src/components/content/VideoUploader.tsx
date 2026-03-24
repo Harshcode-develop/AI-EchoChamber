@@ -21,8 +21,7 @@ export default function VideoUploader({
 }: VideoUploaderProps) {
   const { user } = useAuth();
   const [isDragging, setIsDragging] = useState(false);
-  // Vercel serverless functions have a hard 4.5MB limit for incoming request bodies.
-  const maxSizeMB = user ? 4.5 : 4.5;
+  const maxSizeMB = user ? 3072 : 500;
 
   const allowedTypes = ['video/mp4', 'video/quicktime', 'video/webm'];
 
@@ -186,7 +185,7 @@ export default function VideoUploader({
                 className="mt-6 px-4 py-2 rounded-full bg-[var(--accent-purple)]/5 border border-[var(--accent-purple)]/10 hover:bg-[var(--accent-purple)]/10 transition-all cursor-pointer group/msg"
               >
                 <p className="text-[10px] font-black uppercase tracking-[0.15em] text-[var(--accent-purple)]">
-                  Sign in to upload videos up to <span className="underline underline-offset-4 decoration-2">{maxSizeMB}MB</span>
+                  Sign in to upload videos up to <span className="underline underline-offset-4 decoration-2">3GB</span>
                 </p>
               </div>
             )}
