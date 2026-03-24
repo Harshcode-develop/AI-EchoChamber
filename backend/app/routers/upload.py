@@ -66,20 +66,23 @@ async def upload_video(
 
     file_url = ""
     total_size = 0
-    fd, temp_path = tempfile.mkstemp(suffix=file_ext)
+    fd, temp_path = tempfile.mkstemp(suffix=file_ext, dir="/tmp")
     os.close(fd)
 
     try:
-        # 1. Stream incoming bytes straight to a transient buffer file
-        async with aiofiles.open(temp_path, "wb") as f:
-            while chunk := await file.read(1024 * 1024):  # 1MB chunks
+        # 1. Stream incoming bytes straight to a transient buffer file synchronously
+        with open(temp_path, "wb") as f:
+            while True:
+                chunk = await file.read(1024 * 1024)  # 1MB chunks
+                if not chunk:
+                    break
                 total_size += len(chunk)
                 if total_size > max_size:
                     raise HTTPException(
                         status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
                         detail=f"File too large. Maximum size: {max_size_mb}MB",
                     )
-                await f.write(chunk)
+                f.write(chunk)
 
         # 2. Upload directly to Gemini API in background thread
         if not settings.gemini_api_key:
