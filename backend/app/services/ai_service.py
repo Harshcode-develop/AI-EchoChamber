@@ -218,18 +218,11 @@ The creator writes like this. Match their tone, vocabulary, and style:
             except Exception as e:
                 error_msg = str(e)
                 if "429" in error_msg or "RESOURCE_EXHAUSTED" in error_msg or "quota" in error_msg.lower():
-                    safe_msg = "Generation limit reached. Please contact the developer in contact for more generations"
+                    logger.warning("Gemini API Quota/429 Exception hit: %s", error_msg)
+                    raise ValueError("Generation limit reached. Please contact the developer in contact for more generations")
                 else:
-                    safe_msg = f"Failed to generate {fmt.value} content. Please try again."
                     logger.error("Content generation error for %s: %s", fmt.value, error_msg)
-                
-                results[fmt.value] = {
-                    "format": fmt.value,
-                    "content": safe_msg,
-                    "title": f"{fmt.value} Content",
-                    "character_count": 0,
-                    "word_count": 0,
-                }
+                    raise ValueError(f"Failed to generate {fmt.value} content. Please try again.")
 
         return results
 
