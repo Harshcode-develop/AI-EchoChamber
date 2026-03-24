@@ -189,41 +189,59 @@ The creator writes like this. Match their tone, vocabulary, and style:
                 custom_instruction=custom_instruction,
             )
 
-            try:
-                response = self.client.models.generate_content(
-                    model=self.model_name,
-                    contents=prompt,
-                    config=types.GenerateContentConfig(
-                        temperature=0.7,
-                        top_p=0.9,
-                        max_output_tokens=4096,
-                    ),
-                )
-                content_text = response.text.strip()
+            max_retries = 3
+            retry_delay = 5  # seconds
+            
+            for attempt in range(max_retries):
+                try:
+                    response = await asyncio.to_thread(
+                        self.client.models.generate_content,
+                        model=self.model_name,
+                        contents=prompt,
+                        config=types.GenerateContentConfig(
+                            temperature=0.7,
+                            top_p=0.9,
+                            max_output_tokens=4096,
+                        ),
+                    )
+                    content_text = response.text.strip()
 
-                # Calculate metadata
-                word_count = len(content_text.split())
-                char_count = len(content_text)
+                    # Calculate metadata
+                    word_count = len(content_text.split())
+                    char_count = len(content_text)
 
-                # Generate a title
-                title = self._generate_title(fmt, content_text)
+                    # Generate a title
+                    title = self._generate_title(fmt, content_text)
 
-                results[fmt.value] = {
-                    "format": fmt.value,
-                    "content": content_text,
-                    "title": title,
-                    "character_count": char_count,
-                    "word_count": word_count,
-                }
-            except Exception as e:
-                error_msg = str(e)
-                if "429" in error_msg or "RESOURCE_EXHAUSTED" in error_msg or "quota" in error_msg.lower():
-                    logger.warning("Gemini API Quota/429 Exception hit: %s", error_msg)
-                    raise ValueError("Generation limit reached. Please contact the developer in contact for more generations")
-                else:
-                    logger.error("Content generation error for %s: %s", fmt.value, error_msg)
-                    raise ValueError(f"Failed to generate {fmt.value} content. Please try again.")
+                    results[fmt.value] = {
+                        "format": fmt.value,
+                        "content": content_text,
+                        "title": title,
+                        "character_count": char_count,
+                        "word_count": word_count,
+                    }
+                    
+                    # Successfully generated, escape the retry loop
+                    break
 
+                except Exception as e:
+                    error_msg = str(e)
+                    if "429" in error_msg or "RESOURCE_EXHAUSTED" in error_msg or "quota" in error_msg.lower():
+                        if attempt < max_retries - 1:
+                            logger.warning(f"Google 429 API Quota hit for {fmt.value}. Retrying in {retry_delay}s... (Attempt {attempt+1})")
+                            await asyncio.sleep(retry_delay)
+                            retry_delay *= 2  # Exponential backoff (5s, 10s...)
+                            continue
+                        else:
+                            logger.warning("Gemini API Quota/429 Exception permanently hit after %d retries: %s", max_retries, error_msg)
+                            raise ValueError("Generation limit reached. Please contact the developer in contact for more generations")
+                    else:
+                        logger.error("Content generation error for %s: %s", fmt.value, error_msg)
+                        raise ValueError(f"Failed to generate {fmt.value} content. Please try again.")
+
+            # Tiny natural delay between social format structures to avoid burst-spiking the 15 RPM
+            await asyncio.sleep(1.5)
+            
         return results
 
     def _generate_title(self, fmt: ContentFormat, content: str) -> str:
@@ -298,19 +316,32 @@ Format the output clearly with sections."""
                     ),
                 )
             
-            response = await asyncio.to_thread(_generate_transcript)
+            max_retries = 3
+            retry_delay = 5  # seconds
             
-            return response.text
+            for attempt in range(max_retries):
+                try:
+                    response = await asyncio.to_thread(_generate_transcript)
+                    return response.text
+                except Exception as e:
+                    error_msg = str(e)
+                    if "429" in error_msg or "RESOURCE_EXHAUSTED" in error_msg or "quota" in error_msg.lower():
+                        if attempt < max_retries - 1:
+                            logger.warning(f"Google 429 API Quota hit for video processing. {retry_delay}s... (Attempt {attempt+1})")
+                            await asyncio.sleep(retry_delay)
+                            retry_delay *= 2
+                            continue
+                        else:
+                            raise ValueError("Generation limit reached. Please contact the developer in contact for more generations")
+                    else:
+                        raise ValueError(f"Failed to process video: {error_msg}")
 
         except ValueError:
             # Re-raise our own validation errors
             raise
         except Exception as e:
             error_msg = str(e)
-            if "429" in error_msg or "RESOURCE_EXHAUSTED" in error_msg or "quota" in error_msg.lower():
-                raise ValueError("Generation limit reached. Please contact the developer in contact for more generations")
             logger.error("Video processing failed: %s", error_msg, exc_info=True)
-            print(f"DEBUG: Video processing failed raw message: {error_msg}")
             raise ValueError(f"Failed to process video: {error_msg}")
 
     async def chat_response(
